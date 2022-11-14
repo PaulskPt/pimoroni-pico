@@ -4,6 +4,7 @@
 - [Galactic Unicorn and PicoGraphics](#galactic-unicorn-and-picographics)
 - [Examples](#examples)
   - [Clock](#clock)
+  - [Clock_mod](#clock_mod)
   - [Eighties Super Computer](#eighties-super-computer)
   - [Feature Test](#feature-test)
   - [Feature Test With Audio](#feature-test-with-audio)
@@ -43,6 +44,35 @@ The easiest way to start displaying cool stuff on Galactic Unicorn is using our 
 [clock.py](clock.py)
 
 Clock example with (optional) NTP synchronization. You can adjust the brightness with LUX + and -, and resync the time by pressing A.
+
+### Clock_mod
+
+[clock_mod.py](clock_mod.py)
+
+Modified clock example by @PaulskPt, using timed NTP synchronization. You can adjust the brightness with LUX + and -. Resync of the time is now done at intervals determined by the value of the variable 'interval_secs' in main() (default 600 seconds). Button A re-arranged. Buttons B, C and D added. Button A: increase hours; button B: decrease hours; button C: increase minutes; button D: decrease minutes. When you change hours and/or minutes, using buttons A thru D, the NTP syncing will be halted. This is done to prevent that a next NTP sync will undo your time alteration.
+Added Global variables: 
+- 'classic': If True: the color scheme of the the original Pimoroni clock script version for the Galactic Universe device is used.
+   If False you have an option: see 'use_fixed_color' below.
+- 'use_fixed_color: (default: False). If True. One color (foreground: red, background: black) is used. If False: color change at intervals.
+   The color changes after an NTP sync moment. All foreground colors go with a black background color, except when foregrond color is black, the background will be white.
+- 'my_debug': (default False) if set to True more information will be printed to the REPL.
+- 'do_sync': this boolean variable is used to inhibit NTP sync after a hour/minute change by the user.
+- 'country. It takes the value from the key 'COUNTRY' in the file 'secrets.py'. It is used to replace decimal '.' by ',' if country=='PT'.
+  You can put there your country code, e.g.: 'USA'.
+This example uses different character definitions. The characters are defined in the file 'clock_mod_digits.py'. At the end of this file is defined a 'img_dict', which contains info about the defined characters, all but one, digits, as well as the 'width' each of them occupies. The use of a different character set in combination with other color schemes makes the view of this clock example more 'quiet'. The original version is very nice, colorful and adjusted to ambient light, however that example gives a 'nervous' experience because the surrounding pixels of the background colours are constantly moving. This 'effect' I didn't like. It was one of the reasons for me to write the 'clock_mod' example script. I also didn't like the way the 'colon' character was defined'.
+Added functions:
+- my_dev(): collects the os.uname() into global 'dev_dict' dictionary. Data as: 'machine', (micropython) release and version;
+- epoch(): returns a quasi unix epoch value, used in main() for time-controlled actions.
+- adjust_hour(): self evident;
+- adjust_minute(): same;
+- is_connected: prints to REPL info about the WiFi connectivity;
+- hdg(): prints a header to the REPL. Prints also clock, time_to_sync and percent_to_midday values.
+- main(): contains the main loop
+Modified functions:
+- outline_text();
+- sync_time();
+- redraw_display_if_reqd():
+Compared to the original clock.py example, this example prints more info to the REPL. Info like 'WiFi connected/disconnected'. Other info to REPL as: 'NTP sync in... secs', Clock time and '% to midday' are printed in a table format. Added a main() function with a try...except KeyboarInterrupt block, so the user can interrupt the running script by typing 'Ctrl+C'.
 
 ### Eighties Super Computer
 
