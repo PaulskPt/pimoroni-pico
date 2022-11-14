@@ -50,6 +50,7 @@ Clock example with (optional) NTP synchronization. You can adjust the brightness
 [clock_mod.py](clock_mod.py)
 
 Modified clock example by @PaulskPt, using timed NTP synchronization. You can adjust the brightness with LUX + and -. Resync of the time is now done at intervals determined by the value of the variable 'interval_secs' in main() (default 600 seconds). Button A re-arranged. Buttons B, C and D added. Button A: increase hours; button B: decrease hours; button C: increase minutes; button D: decrease minutes. When you change hours and/or minutes, using buttons A thru D, the NTP syncing will be halted. This is done to prevent that a next NTP sync will undo your time alteration.
+
 Added Global variables: 
 - 'classic': If True: the color scheme of the the original Pimoroni clock script version for the Galactic Universe device is used.
    If False you have an option: see 'use_fixed_color' below.
