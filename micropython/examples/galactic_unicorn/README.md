@@ -57,7 +57,7 @@ Added Global variables:
    The color changes after an NTP sync moment. All foreground colors go with a black background color, except when foregrond color is black, the background will be white.
 - 'my_debug': (default False) if set to True more information will be printed to the REPL.
 - 'do_sync': this boolean variable is used to inhibit NTP sync after a hour/minute change by the user.
-- 'country. It takes the value from the key 'COUNTRY' in the file 'secrets.py'. It is used to replace decimal '.' by ',' if country=='PT'.
+- 'country. It takes the value from the key 'COUNTRY' in the file 'clock_mod_secrets.py'. It is used to replace decimal '.' by ',' if country=='PT'.
   You can put there your country code, e.g.: 'USA'.
 
 This example uses different character definitions. The characters are defined in the file 'clock_mod_digits.py'. At the end of this file is defined a 'img_dict', which contains info about the defined characters, all but one, digits, as well as the 'width' each of them occupies. The use of a different character set in combination with other color schemes makes the view of this clock example more 'quiet'. The original version is very nice, colorful and adjusted to ambient light, however that example gives a 'nervous' experience because the surrounding pixels of the background colours are constantly moving. This 'effect' I didn't like. It was one of the reasons for me to write the 'clock_mod' example script. I also didn't like the way the 'colon' character was defined'.
