@@ -59,7 +59,9 @@ Added Global variables:
 - 'do_sync': this boolean variable is used to inhibit NTP sync after a hour/minute change by the user.
 - 'country. It takes the value from the key 'COUNTRY' in the file 'secrets.py'. It is used to replace decimal '.' by ',' if country=='PT'.
   You can put there your country code, e.g.: 'USA'.
+
 This example uses different character definitions. The characters are defined in the file 'clock_mod_digits.py'. At the end of this file is defined a 'img_dict', which contains info about the defined characters, all but one, digits, as well as the 'width' each of them occupies. The use of a different character set in combination with other color schemes makes the view of this clock example more 'quiet'. The original version is very nice, colorful and adjusted to ambient light, however that example gives a 'nervous' experience because the surrounding pixels of the background colours are constantly moving. This 'effect' I didn't like. It was one of the reasons for me to write the 'clock_mod' example script. I also didn't like the way the 'colon' character was defined'.
+
 Added functions:
 - my_dev(): collects the os.uname() into global 'dev_dict' dictionary. Data as: 'machine', (micropython) release and version;
 - epoch(): returns a quasi unix epoch value, used in main() for time-controlled actions.
@@ -68,10 +70,12 @@ Added functions:
 - is_connected: prints to REPL info about the WiFi connectivity;
 - hdg(): prints a header to the REPL. Prints also clock, time_to_sync and percent_to_midday values.
 - main(): contains the main loop
+
 Modified functions:
 - outline_text();
 - sync_time();
 - redraw_display_if_reqd():
+
 Compared to the original clock.py example, this example prints more info to the REPL. Info like 'WiFi connected/disconnected'. Other info to REPL as: 'NTP sync in... secs', Clock time and '% to midday' are printed in a table format. Added a main() function with a try...except KeyboarInterrupt block, so the user can interrupt the running script by typing 'Ctrl+C'.
 
 ### Eighties Super Computer
