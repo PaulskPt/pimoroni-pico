@@ -77,7 +77,7 @@ Modified functions:
 - sync_time();
 - redraw_display_if_reqd():
 
-Compared to the original clock.py example, this example prints more info to the REPL. Info like 'WiFi connected/disconnected'. Other info to REPL as: 'NTP sync in... secs', Clock time and '% to midday' are printed in a table format. Added a main() function with a try...except KeyboarInterrupt block, so the user can interrupt the running script by typing 'Ctrl+C'.
+Compared to the original clock.py example, this example prints more info to the REPL. Info like 'WiFi connected/disconnected'. Other info to REPL as: 'NTP sync in... secs', Clock time and '% to midday' are printed in a table format. Added a main() function with a try...except KeyboardInterrupt block, so the user can interrupt the running script by typing 'Ctrl+C'.
 
 ### Eighties Super Computer
 
