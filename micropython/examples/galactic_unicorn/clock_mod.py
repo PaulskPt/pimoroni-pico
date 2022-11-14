@@ -553,7 +553,6 @@ def main():
                     time_to_sync = "{:4d}".format(interval_secs - elapsed_secs)
                     n = 100-ptm*100
                     s = "{:6.3f}".format(n)
-                    #s = str(n)
                     if country.upper() == "PT":
                         s = s.replace('.',',')  # Don't do this if country == "USA"
                     if elapsed_secs == 0 or mod_secs60 == 0:
