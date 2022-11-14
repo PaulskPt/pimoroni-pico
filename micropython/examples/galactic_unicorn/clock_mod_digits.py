@@ -51,7 +51,7 @@ three = [
     "OOOO",
     "   O",
     "  O ",
-    "  O ",
+    " OO ",
     "   O",
     "O  O",
     " OO ",
