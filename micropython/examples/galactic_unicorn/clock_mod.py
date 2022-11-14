@@ -4,9 +4,10 @@
 # Create a secrets.py with your Wifi details to be able to get the time
 # when the Galactic Unicorn isn't connected to Thonny.
 #
-# secrets.py should contain:
+# clock_mod_secrets.py should contain:
 # WIFI_SSID = "Your WiFi SSID"
 # WIFI_PASSWORD = "Your WiFi password"
+# COUNTRY = "PT" or other country code e.g. "USA"
 #
 # Clock synchronizes time on start, and resynchronizes if you press the A button
 ##############
@@ -20,10 +21,10 @@
 # Instead of calling time_sync() by pressing Button A,
 # time_sync() is now called at an interval set by global variable interval_secs
 # Changing the minute:
-# - will not change the hour;
+# - will not change the year, month, day, hour or second value
 # - roll-over >= 24 = 0. < 0 = 23)
 # Changing the hour:
-# - will not change the minute
+# - will not change the year, month, day, minute or second value
 # - roll-over >= 60 = 0. < 0 = 59)
 #
 # Global variable 'classic' :
@@ -36,10 +37,11 @@
 # The 'do_sync' flag can only be switched back to True by restarting this script.
 #
 # Set the global variable 'my_debug' to True to see more details like os.uname() results.
-# Global variable use_fixed_color:
+# Global variable: use_fixed_color:
 # If True, the displayed foreground color is red
 # If False, the displayed foreground color starts with red. After a NTP sync the color will change to
 # one of the seven other defined colors. See color_dict.
+# The NTP sync interval is determined by the value of the variable 'interval_secs' inside function main() (line 511) (default: 600)
 ##############
 import time, sys, os
 import math
@@ -50,7 +52,7 @@ from galactic import GalacticUnicorn
 from picographics import PicoGraphics, DISPLAY_GALACTIC_UNICORN as DISPLAY
 
 try:
-    from secrets import WIFI_SSID, WIFI_PASSWORD, COUNTRY
+    from clock_mod_secrets import WIFI_SSID, WIFI_PASSWORD, COUNTRY
     wifi_available = True
 except ImportError:
     print("Create secrets.py with your WiFi credentials to get time from NTP")
@@ -506,7 +508,7 @@ def main():
                 print(TAG+f"Version: \'{dev_dict['version']}\'")
     gu.set_brightness(0.2)  # was: (0.5)
 
-    interval_secs = 60 # 10 minutes
+    interval_secs = 600 # 10 minutes
     if do_sync:
         print(TAG+f"At intervals of {interval_secs//60} minutes the built-in RTC will be synchronized from NTP datetime server")
     else:
