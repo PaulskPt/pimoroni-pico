@@ -68,7 +68,7 @@ Added functions:
 - epoch(): returns a quasi unix epoch value, used in main() for time-controlled actions.
 - adjust_hour(): self evident;
 - adjust_minute(): same;
-- is_connected: prints to REPL info about the WiFi connectivity;
+- is_connected: prints to REPL info about the WiFi connection status (connected/disconnected);
 - hdg(): prints a header to the REPL. Prints also clock, time_to_sync and percent_to_midday values.
 - main(): contains the main loop
 
