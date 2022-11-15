@@ -49,12 +49,12 @@ Clock example with (optional) NTP synchronization. You can adjust the brightness
 
 [clock_mod.py](clock_mod.py)
 
-Modified clock example by @PaulskPt, using timed NTP synchronization. You can adjust the brightness with LUX + and -. Resync of the time is now done at intervals determined by the value of the variable 'interval_secs' in main() (default 600 seconds). Button A re-arranged. Buttons B, C and D added. Button A: increase hours; button B: decrease hours; button C: increase minutes; button D: decrease minutes. When you change hours and/or minutes, using buttons A thru D, the NTP syncing will be halted. This is done to prevent that a next NTP sync will undo your time alteration.
+Modified clock example by @PaulskPt, using timed NTP synchronization. You can adjust the brightness with LUX + and -. Resync of the time is now done at intervals determined by the value of the variable 'interval_secs' in main(), line 545, default 600 seconds. Button A re-arranged. Buttons B, C and D added. Button A: increase hours; button B: decrease hours; button C: increase minutes; button D: decrease minutes. When you change hours and/or minutes, using buttons A thru D, the NTP syncing will be halted. This is done to prevent that a next NTP sync will undo your time alteration.
 
 Added Global variables: 
 - 'classic': (default False) If True: the color scheme of the the original Pimoroni clock script version for the Galactic Universe device is used.
    If False you have an option: see 'use_fixed_color' below.
-- 'use_fixed_color: (default: False) (line 77). If True, set your favorite color with variable 'clr_idx' (line 148), e.g.: 'clr_idx = pink_'. 
+- 'use_fixed_color: (default: False) (line 77). If True, set your favorite color with variable 'clr_idx' (line 149), e.g.: 'clr_idx = pink_'. 
    If True. One color (defaults: foreground: red, background: black) is used. If False: color change at intervals.
    The color changes after an NTP sync moment. All foreground colors go with a black background color, except when foregrond color is black, the background will be white.
 - 'my_debug': (default False) If True more information will be printed to the REPL.
@@ -70,6 +70,7 @@ Added functions:
 - adjust_hour(): self evident;
 - adjust_minute(): same;
 - is_connected: prints to REPL info about the WiFi connection status (connected/disconnected);
+- blink(): blinks a 2x2 pixel square in the top-left corner to indicate WiFi connected (green), WiFi disconnected (red). time_sync (blue).
 - hdg(): prints a header to the REPL. Prints also clock, time_to_sync and percent_to_midday values.
 - main(): contains the main loop
 

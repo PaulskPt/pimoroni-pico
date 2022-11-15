@@ -1,7 +1,7 @@
 # https://github.com/pimoroni/pimoroni-pico/blob/main/micropython/examples/galactic_unicorn/clock.py
 # Clock example with NTP synchronization
 #
-# Create a secrets.py with your Wifi details to be able to get the time
+# Create a clock_mod_secrets.py with your Wifi details to be able to get the time
 # when the Galactic Unicorn isn't connected to Thonny.
 #
 # clock_mod_secrets.py should contain:
@@ -66,12 +66,12 @@ id = '{:02x}{:02x}{:02x}{:02x}'.format(id0[0], id0[1], id0[2], id0[3])
 # used in main()
 country = COUNTRY.upper()
 
-# Classic means: the original version
+# Classic means: the original Pimoroni clock script version for the Galactic Universe device
 classic = False
 
 do_sync = True # Built-in RTC will be updated at intervals by NTP datetime
 
-img_dict = {} # to prevent error. dictionary will be loaded from clock_mod_digits.py
+img_dict = {} # to prevent error. dictionary will be loaded from digits.py
 
 if not classic:
     from clock_mod_digits import *
@@ -147,7 +147,9 @@ clr_dict_rev = {
     white_: 'WHITE',
     black_: 'BLACK'
 }
-clr_idx = red_
+#-----------------+
+clr_idx = pink_ # | <<<=== Set here the fixed color
+#-----------------+
 max_clr_idx = len(clr_dict)-1
 
 time_chgd = False
@@ -302,6 +304,35 @@ def outline_text(text, x, y):
                     gr.pixel(col_+i, j)
         gu.update(gr)
         
+# In the left-upper corner
+# blink a 2x2 square
+# to indicate:
+# WiFi Connected:       green_
+# WiFi disconnected:    red_
+# sync_time successful: blue_
+def blink(clr):
+    if my_debug:
+        TAG= "blink():     "
+        print(TAG+f"param= {clr_dict_rev[clr]}")
+    if clr in clr_dict.keys():
+        fg = clr_dict[clr]
+        bg = clr_dict[black_]
+        fg_pen = gr.create_pen(fg[0], fg[1], fg[2])
+        bg_pen = gr.create_pen(bg[0], bg[1], bg[2])
+        for h in range(3): # blink 3 times
+            for i in range(2):  # horzontal
+                for j in range(2):  # vertical
+                    gr.set_pen(fg_pen) # green or red
+                    gr.pixel(i, j)
+            gu.update(gr)
+            time.sleep(0.2)
+            for i in range(2):  # horizontal
+                for j in range(2):  # vertical
+                    gr.set_pen(bg_pen) # black
+                    gr.pixel(i, j)
+            gu.update(gr)
+            time.sleep(0.2)
+
 # NTP synchronizes the time to UTC, this allows you to adjust the displayed time
 # by one hour increments from UTC by pressing the volume up/down buttons
 utc_offset = 0
@@ -315,6 +346,10 @@ def is_connected(TAG):
         TAG="is_connected(): "
     s = '' if wlan.isconnected() else "dis"
     print(TAG+f"WiFi {s}connected")
+    if wlan.isconnected():
+        blink(green_)
+    else:
+        blink(red_)
 
 # Connect to wifi and synchronize the RTC time from NTP
 def sync_time():
@@ -349,6 +384,7 @@ def sync_time():
         is_connected(TAG)
         try:
             ntptime.settime()
+            blink(blue_)
             print(TAG+"built-in RTC sync\'ed from NTP")
         except OSError as e:
             print(TAG+f"error: {e}")
@@ -507,8 +543,9 @@ def main():
             if 'version' in k:
                 print(TAG+f"Version: \'{dev_dict['version']}\'")
     gu.set_brightness(0.2)  # was: (0.5)
-
-    interval_secs = 600 # 10 minutes
+    #----------------------------------+
+    interval_secs = 600 # 10 minutes # | <<<=== Set here the time_sync interval
+    #----------------------------------+
     if do_sync:
         print(TAG+f"At intervals of {interval_secs//60} minutes the built-in RTC will be synchronized from NTP datetime server")
     else:
@@ -553,6 +590,7 @@ def main():
                     time_to_sync = "{:4d}".format(interval_secs - elapsed_secs)
                     n = 100-ptm*100
                     s = "{:6.3f}".format(n)
+                    #s = str(n)
                     if country.upper() == "PT":
                         s = s.replace('.',',')  # Don't do this if country == "USA"
                     if elapsed_secs == 0 or mod_secs60 == 0:
@@ -564,8 +602,6 @@ def main():
                             pr_hdg = False
                         hdg(pr_hdg, TAG, clock, time_to_sync, s)
 
-
-                
             if gu.is_pressed(gu.SWITCH_BRIGHTNESS_UP):
                 gu.adjust_brightness(+0.01)
 
