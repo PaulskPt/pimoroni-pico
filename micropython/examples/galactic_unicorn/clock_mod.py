@@ -1,13 +1,12 @@
 # https://github.com/pimoroni/pimoroni-pico/blob/main/micropython/examples/galactic_unicorn/clock.py
 # Clock example with NTP synchronization
 #
-# Create a clock_mod_secrets.py with your Wifi details to be able to get the time
+# Create a secrets.py with your Wifi details to be able to get the time
 # when the Galactic Unicorn isn't connected to Thonny.
 #
-# clock_mod_secrets.py should contain:
+# secrets.py should contain:
 # WIFI_SSID = "Your WiFi SSID"
 # WIFI_PASSWORD = "Your WiFi password"
-# COUNTRY = "PT" or other country code e.g. "USA"
 #
 # Clock synchronizes time on start, and resynchronizes if you press the A button
 ##############
@@ -21,38 +20,40 @@
 # Instead of calling time_sync() by pressing Button A,
 # time_sync() is now called at an interval set by global variable interval_secs
 # Changing the minute:
-# - will not change the year, month, day, hour or second value
+# - will not change the hour;
 # - roll-over >= 24 = 0. < 0 = 23)
 # Changing the hour:
-# - will not change the year, month, day, minute or second value
+# - will not change the minute
 # - roll-over >= 60 = 0. < 0 = 59)
 #
 # Global variable 'classic' :
 # - if True: the classic clock algorithm is used
 # - if False: the mmodified (@PaulskPt) algorithm is used
-#             and loads the character definitions in clock_mod_digits.py
+#             and loads the character definitions in digits.py
 # Note:
 # When the hour or minute has been changed, the global flag 'do_sync' will be set to False
 # because we don't want this change of hour/minute be overruled by a next NTP sync.
 # The 'do_sync' flag can only be switched back to True by restarting this script.
 #
 # Set the global variable 'my_debug' to True to see more details like os.uname() results.
-# Global variable: use_fixed_color:
+# Global variable use_fixed_color:
 # If True, the displayed foreground color is red
 # If False, the displayed foreground color starts with red. After a NTP sync the color will change to
 # one of the seven other defined colors. See color_dict.
-# The NTP sync interval is determined by the value of the variable 'interval_secs' inside function main() (line 511) (default: 600)
+# Added global variable 'use_sound'. If True a double tone will be played at NTP_sync.
+# Added global variable 'vol'. Default vol = 10 which inhibits sound. After the user pressed button 'Vol +' and vol > 10,
+# then a sound will be played at the NTP_sync interval events.
 ##############
 import time, sys, os
 import math
 import machine
 import network
 import ntptime
-from galactic import GalacticUnicorn
+from galactic import GalacticUnicorn, Channel
 from picographics import PicoGraphics, DISPLAY_GALACTIC_UNICORN as DISPLAY
 
 try:
-    from clock_mod_secrets import WIFI_SSID, WIFI_PASSWORD, COUNTRY
+    from clock_mod_secrets import WIFI_SSID, WIFI_PASSWORD, COUNTRY, TZ_OFFSET
     wifi_available = True
 except ImportError:
     print("Create secrets.py with your WiFi credentials to get time from NTP")
@@ -71,12 +72,20 @@ classic = False
 
 do_sync = True # Built-in RTC will be updated at intervals by NTP datetime
 
+# NTP synchronizes the time to UTC, this allows you to adjust the displayed time
+# by one hour increments from UTC by pressing the volume up/down buttons
+utc_offset = TZ_OFFSET
+
 img_dict = {} # to prevent error. dictionary will be loaded from digits.py
+
+use_sound = True
 
 if not classic:
     from clock_mod_digits import *
 
 use_fixed_color = False
+
+vol_set = False
 
 # constants for controlling the background colour throughout the day
 MIDDAY_HUE = 1.1
@@ -93,7 +102,8 @@ wlan = None
 
 # create galactic object and graphics surface for drawing
 gu = GalacticUnicorn()
-gr = PicoGraphics(DISPLAY)
+#gr = PicoGraphics(DISPLAY)
+gr = PicoGraphics(display=DISPLAY)
 
 button_a = machine.Pin(gu.SWITCH_A, machine.Pin.IN, machine.Pin.PULL_UP)
 button_b = machine.Pin(gu.SWITCH_B, machine.Pin.IN, machine.Pin.PULL_UP)
@@ -116,7 +126,7 @@ height = gu.HEIGHT
 
 # See: https://www.rapidtables.com/web/color/index.html
 # set up some pens to use later
-
+BLACK = gr.create_pen(0, 0, 0)
 red_ = 0
 green_ = 1
 blue_ = 2
@@ -155,6 +165,57 @@ max_clr_idx = len(clr_dict)-1
 time_chgd = False
 dev_dict = {}
 
+if use_sound:
+    timer = machine.Timer(-1)
+
+    # The two frequencies to play
+    tone_a = 1000
+    tone_b = 900
+    vol = 10  # initially no sound, only after user presses 'Vol +'
+    min_vol = 10
+    max_vol = 20000
+    
+
+    notes = [(1000, 900), (1000, 900)]
+    channels = [gu.synth_channel(i) for i in range(len(notes))]
+
+    def play_tone(tone):
+        global vol
+        if vol <= 10:
+            return  # don't make sound
+        if tone >= 0 and tone <=1000:
+            # Stop synth (if running) and play Tone A
+            timer.deinit()
+            if tone == tone_a:
+                channels[0].play_tone(tone, 0.06)
+            if tone == tone_b:
+                channels[1].play_tone(tone_b, 0.06, attack=0.5)
+
+            gu.play_synth()
+
+    def double_tone():
+        global tone_a, tone_b
+        TAG="double_tone(): "
+        tone_a = 1000
+        tone_b = 900
+        ch_a = 0
+        ch_b = 1
+        tone = None
+        ch = None
+
+        for _ in range(2):
+            timer.deinit() 
+            tone = tone_a if _ == 0 else tone_b
+            # print(TAG+f"playing tone {tone}")
+            ch = ch_a if _ == 0 else ch_b
+            if tone > 0:  # Zero means tone not playing
+                play_tone(tone)
+                time.sleep(0.3)
+        gu.stop_playing()
+        timer.deinit()
+        tone_a = 0
+        tone_b = 0
+
 """
     os.uname() result =
     (sysname='rp2',
@@ -176,6 +237,11 @@ def my_dev():
         dev_dict[dev_lst[i]] = s_tpl[i]
     if my_debug:
         print(TAG+f"dev_dict= {dev_dict}")
+
+def clear():
+    gr.set_pen(BLACK)
+    gr.clear()
+    gu.update(gr)
 
 @micropython.native  # noqa: F821
 def from_hsv(h, s, v):
@@ -227,12 +293,20 @@ def gradient_background(start_hue, start_sat, start_val, end_hue, end_sat, end_v
 
 # function for drawing outlined text
 
-def outline_text(text, x, y):
+def outline_text(text, x: int=10, y: int=2, inv: int=0):
     # def draw(image, fg, bg, time_ms):
     TAG = "outline_text(): "
+    my_classic = classic
+    # print(TAG+f"text= \'{text}\'")
+    t_lst = ["Res", "Vol"]
+    if text[:3] in t_lst:
+        my_classic = True
 
-    if classic:
-        fg = clr_dict[black_]
+    if my_classic:
+        if not inv:
+            fg = clr_dict[black_]
+        else:
+            fg = clr_dict[white_]
         fg_pen = gr.create_pen(fg[0], fg[1], fg[2])
         gr.set_pen(fg_pen)
         gr.text(text, x - 1, y - 1, -1, 1)
@@ -246,10 +320,15 @@ def outline_text(text, x, y):
         gr.text(text, x    , y + 1, -1, 1)
         gr.text(text, x + 1, y + 1, -1, 1)
         
-        fg = clr_dict[white_]
+        if not inv:
+            fg = clr_dict[white_]
+        else:
+            fg = clr_dict[black_]
         fg_pen = gr.create_pen(fg[0], fg[1], fg[2])
         gr.set_pen(fg_pen)
         gr.text(text, x, y, -1, 1)
+        if vol_set:
+            time.sleep(1)
     else:
         img = None
         fg = clr_dict[clr_idx]
@@ -276,8 +355,12 @@ def outline_text(text, x, y):
                 width_ = img_dict[text[_]][1]
                 #print(TAG+f"image= \'{text[_]}\'")
             else:
-                print(TAG+f"key \'{text[_]}\' not in img_dict")
+                if my_debug:
+                    print(TAG+f"key \'{text[_]}\' not in img_dict")
 
+            if img is None:
+                return
+            
             for y in range(len(img)):
                 row = img[y]
                 for z in range(len(row)):
@@ -333,10 +416,6 @@ def blink(clr):
             gu.update(gr)
             time.sleep(0.2)
 
-# NTP synchronizes the time to UTC, this allows you to adjust the displayed time
-# by one hour increments from UTC by pressing the volume up/down buttons
-utc_offset = 0
-
 # wrapper for wlan.isconnected()
 # Param TAG: the TAG from the calling function
 # so this func is printing 'in name of' the calling function
@@ -351,15 +430,17 @@ def is_connected(TAG):
     else:
         blink(red_)
 
-# Connect to wifi and synchronize the RTC time from NTP
+
+# Connect to wifi and synchrnize the RTC time from NTP
 def sync_time():
-    global wlan
+    global wlan, tone_a, tone_b
     if not do_sync:
         return
     if not wifi_available:
         return
     TAG="sync_time(): "
     msg_shown = False
+
     # Start connection
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -384,6 +465,8 @@ def sync_time():
         is_connected(TAG)
         try:
             ntptime.settime()
+            if use_sound:
+                double_tone()
             blink(blue_)
             print(TAG+"built-in RTC sync\'ed from NTP")
         except OSError as e:
@@ -467,12 +550,12 @@ button_a.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_hour)
 button_b.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_hour)
 button_c.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_minute)
 button_d.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_minute)
-up_button.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_utc_offset)
-down_button.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_utc_offset)
+#up_button.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_utc_offset)
+#down_button.irq(trigger=machine.Pin.IRQ_FALLING, handler=adjust_utc_offset)
 
 # Check whether the RTC time has changed and if so redraw the display
 def redraw_display_if_reqd():
-    global clock, year, month, day, wd, hour, minute, second, last_second, old_secs, time_chgd, ptm
+    global clock, year, month, day, wd, hour, minute, second, last_second, old_secs, time_chgd, ptm, vol_set
     
     if time_chgd:
         rtc.datetime((year,month,day,wd,hour,minute,second,0))
@@ -511,6 +594,8 @@ def redraw_display_if_reqd():
         y = 2
 
         outline_text(clock, x, y)
+        if vol_set:
+            vol_set = False  # clear
 
         last_second = second
 
@@ -529,7 +614,7 @@ def hdg(hdg, TAG, clock, time_to_sync, s,):
         print(ln)
     
 def main():
-    global dev_dict, clr_idx
+    global dev_dict, clr_idx, tone_a, tone_b, vol_set, vol
     TAG="main():      "
     my_dev() # fill dev_dict with os.uname() keys and values
     if len(dev_dict) > 0:
@@ -561,8 +646,10 @@ def main():
     elapsed_old = -1
     pr_hdg = False
     print(TAG+f"Display color: {clr_dict_rev[clr_idx]}")
+    stop = False
     while True:
         try:
+            text = ''
             curr_secs = epoch()
             elapsed_secs = curr_secs - start_secs
             #print(TAG+f"elapsed_secs= {elapsed_secs}")
@@ -607,6 +694,31 @@ def main():
 
             if gu.is_pressed(gu.SWITCH_BRIGHTNESS_DOWN):
                 gu.adjust_brightness(-0.01)
+            
+            if use_sound:
+                if gu.is_pressed(gu.SWITCH_VOLUME_UP):
+                    if vol > 0:  # Zero means tone not playing
+                        # Increase Tone A
+                        vol = min(vol + 10, 20000)
+                        #channels[0].frequency(vol)
+
+                if gu.is_pressed(gu.SWITCH_VOLUME_DOWN):
+                    if vol > 0:  # Zero means tone not playing
+                        # Decrease Tone A
+                        vol = max(vol - 10, 10)
+                        #channels[0].frequency(vol)
+                    
+                if gu.is_pressed(gu.SWITCH_VOLUME_UP):
+                    text = "Vol Up"+' '+str(vol)
+                    gr.set_pen(gr.create_pen(0, 0, 0))
+                    clear()
+                    outline_text(text, x=5)
+
+                if gu.is_pressed(gu.SWITCH_VOLUME_DOWN):
+                    text = "Vol Dn"+' '+str(vol)
+                    gr.set_pen(gr.create_pen(0, 0, 0))
+                    clear()
+                    outline_text(text, x=5)
 
             if gu.is_pressed(gu.SWITCH_A):
                 adjust_hour(gu.SWITCH_A)
@@ -619,11 +731,23 @@ def main():
                 
             if gu.is_pressed(gu.SWITCH_D):
                 adjust_minute(gu.SWITCH_D)
-
+                
+            if gu.is_pressed(gu.SWITCH_SLEEP):
+                text = "Resetting..."
+                print("Going to reset...")
+                stop = True
+                gr.set_pen(gr.create_pen(0, 0, 0))
+                clear()
+                outline_text(text)
+    
             redraw_display_if_reqd()
 
             # update the display
             gu.update(gr)
+            
+            if stop:
+                time.sleep(2)
+                machine.reset()
 
             time.sleep(0.01)
         except KeyboardInterrupt:
